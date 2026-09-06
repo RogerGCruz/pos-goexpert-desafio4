@@ -26,9 +26,9 @@ test/                          -> módulo separado (testes e2e), module .../pos-
     run-e2e.sh                     -> sobe containers, roda os testes e2e e os encerra
 ```
 
-`src/` e `test/` são módulos Go independentes (cada um com seu próprio `go.mod`/`go.sum`), unidos pelo `go.work` na raiz — isso permite rodar `go build`/`go test` nos dois a partir da raiz sem precisar de `replace` directives, mantendo os testes e2e isolados do módulo da aplicação.
+`src/` e `test/` são módulos Go independentes (cada um com seu próprio `go.mod`/`go.sum`), unidos pelo `go.work` na raiz - isso permite rodar `go build`/`go test` nos dois a partir da raiz sem precisar de `replace` directives, mantendo os testes e2e isolados do módulo da aplicação.
 
-- **Strategy**: `limiter.Strategy` define `Increment`, `IsBlocked` e `Block`. `RedisStrategy` é a implementação obrigatória do desafio. Para trocar de mecanismo de persistência (ex.: memória, Postgres, Memcached), basta criar um novo tipo que implemente `Strategy` e injetá-lo em `limiter.New(strategy, cfg)` — nenhuma outra parte do código muda.
+- **Strategy**: `limiter.Strategy` define `Increment`, `IsBlocked` e `Block`. `RedisStrategy` é a implementação obrigatória do desafio. Para trocar de mecanismo de persistência (ex.: memória, Postgres, Memcached), basta criar um novo tipo que implemente `Strategy` e injetá-lo em `limiter.New(strategy, cfg)` - nenhuma outra parte do código muda.
 - **Desacoplamento**: `Limiter` (regra de negócio) não conhece HTTP; `middleware.RateLimiter` (transporte) não conhece Redis, apenas chama `Limiter.Allow(ctx, ip, token)`.
 - **Precedência Token > IP**: em `Limiter.resolveRule`, se um token for informado, suas regras (específicas ou padrão) sempre substituem as regras de IP.
 
@@ -94,7 +94,7 @@ func (s *MinhaStrategy) Block(ctx context.Context, key string, duration time.Dur
 
 2. Em `src/cmd/server/main.go`, troque `limiter.NewRedisStrategy(redisClient)` pela sua implementação ao chamar `limiter.New(strategy, cfg.Limiter)`.
 
-## Testes automatizados
+## Testes automatizados - unit
 
 Os testes usam `miniredis` (Redis em memória) para validar `RedisStrategy` e `Limiter` sem depender de infraestrutura externa. Rode a partir da raiz (o `go.work` resolve os dois módulos):
 
@@ -111,11 +111,11 @@ Cobertura:
 - IPs diferentes são controlados de forma independente.
 - Middleware HTTP retorna `429` e a mensagem exata ao exceder o limite, tanto por IP quanto por token.
 
-### Testes BDD (Gherkin + godog) — end-to-end
+### Testes BDD (Gherkin + godog) - end-to-end
 
 Além dos testes acima (rápidos, com `miniredis`), há cenários Gherkin em [test/bdd/features/rate_limiter.feature](test/bdd/features/rate_limiter.feature) que validam a API **real**, rodando contra os containers do `docker compose` (app + Redis reais).
 
-Esses testes ficam pulados (`SKIP`) por padrão — inclusive rodando `go test ./...` ou pelo Test Explorer/CodeLens do VS Code — a menos que a variável de ambiente `E2E=1` esteja definida. Isso evita falhas quando os containers não estão no ar, tanto no terminal quanto no runner de testes da IDE.
+Esses testes ficam pulados (`SKIP`) por padrão - inclusive rodando `go test ./...` ou pelo Test Explorer/CodeLens do VS Code - a menos que a variável de ambiente `E2E=1` esteja definida. Isso evita falhas quando os containers não estão no ar, tanto no terminal quanto no runner de testes da IDE.
 
 #### Opção 1 (recomendada): script `run-e2e.sh`
 
