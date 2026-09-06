@@ -5,20 +5,28 @@ Rate Limiter em Go, implementado como middleware HTTP, com limitação por IP e 
 ## Arquitetura
 
 ```
-cmd/server/main.go          -> composição da aplicação (wiring)
-internal/config             -> carga de configuração via env/.env
-internal/limiter
-  strategy.go                -> interface Strategy (contrato de persistência)
-  redis_strategy.go           -> implementação Strategy usando Redis
-  limiter.go                  -> regras de negócio (Limiter), independente de HTTP e de Redis
-internal/middleware
-  ratelimiter.go              -> middleware HTTP, desacoplado da lógica de negócio
-test/bdd
-  features/rate_limiter.feature -> cenários Gherkin (BDD) end-to-end
-  rate_limiter_test.go           -> runner godog (TestFeatures)
-  steps_test.go                  -> step definitions
-  run-e2e.sh                     -> sobe containers, roda os testes e2e e os encerra
+go.work                        -> workspace Go ligando os módulos src/ e test/
+src/                           -> módulo principal (aplicação), module github.com/rogerioperoni/pos-goexpert-desafio4
+  go.mod, go.sum
+  Dockerfile, docker-compose.yaml, .env, .env.example
+  cmd/server/main.go            -> composição da aplicação (wiring)
+  internal/config               -> carga de configuração via env/.env
+  internal/limiter
+    strategy.go                  -> interface Strategy (contrato de persistência)
+    redis_strategy.go             -> implementação Strategy usando Redis
+    limiter.go                    -> regras de negócio (Limiter), independente de HTTP e de Redis
+  internal/middleware
+    ratelimiter.go                -> middleware HTTP, desacoplado da lógica de negócio
+test/                          -> módulo separado (testes e2e), module .../pos-goexpert-desafio4/test
+  go.mod, go.sum
+  bdd/
+    features/rate_limiter.feature -> cenários Gherkin (BDD) end-to-end
+    rate_limiter_test.go           -> runner godog (TestFeatures)
+    steps_test.go                  -> step definitions
+    run-e2e.sh                     -> sobe containers, roda os testes e2e e os encerra
 ```
+
+`src/` e `test/` são módulos Go independentes (cada um com seu próprio `go.mod`/`go.sum`), unidos pelo `go.work` na raiz — isso permite rodar `go build`/`go test` nos dois a partir da raiz sem precisar de `replace` directives, mantendo os testes e2e isolados do módulo da aplicação.
 
 - **Strategy**: `limiter.Strategy` define `Increment`, `IsBlocked` e `Block`. `RedisStrategy` é a implementação obrigatória do desafio. Para trocar de mecanismo de persistência (ex.: memória, Postgres, Memcached), basta criar um novo tipo que implemente `Strategy` e injetá-lo em `limiter.New(strategy, cfg)` — nenhuma outra parte do código muda.
 - **Desacoplamento**: `Limiter` (regra de negócio) não conhece HTTP; `middleware.RateLimiter` (transporte) não conhece Redis, apenas chama `Limiter.Allow(ctx, ip, token)`.
@@ -48,6 +56,7 @@ O token é enviado no header: `API_KEY: <TOKEN>`.
 ### Com Docker (recomendado)
 
 ```powershell
+cd src
 docker compose up --build
 ```
 
@@ -64,11 +73,11 @@ Ao exceder o limite, a resposta é `429` com o corpo:
 ### Localmente (sem Docker)
 
 1. Suba um Redis (`docker run -p 6379:6379 redis:7-alpine`).
-2. Ajuste `.env` com `REDIS_HOST=localhost`.
-3. Rode:
+2. Ajuste `src/.env` com `REDIS_HOST=localhost`.
+3. Rode (a partir da raiz, graças ao `go.work`):
 
 ```powershell
-go run ./cmd/server
+go run ./src/cmd/server
 ```
 
 ## Como trocar a estratégia de persistência
@@ -83,14 +92,14 @@ func (s *MinhaStrategy) IsBlocked(ctx context.Context, key string) (bool, error)
 func (s *MinhaStrategy) Block(ctx context.Context, key string, duration time.Duration) error { /* ... */ }
 ```
 
-2. Em `cmd/server/main.go`, troque `limiter.NewRedisStrategy(redisClient)` pela sua implementação ao chamar `limiter.New(strategy, cfg.Limiter)`.
+2. Em `src/cmd/server/main.go`, troque `limiter.NewRedisStrategy(redisClient)` pela sua implementação ao chamar `limiter.New(strategy, cfg.Limiter)`.
 
 ## Testes automatizados
 
-Os testes usam `miniredis` (Redis em memória) para validar `RedisStrategy` e `Limiter` sem depender de infraestrutura externa:
+Os testes usam `miniredis` (Redis em memória) para validar `RedisStrategy` e `Limiter` sem depender de infraestrutura externa. Rode a partir da raiz (o `go.work` resolve os dois módulos):
 
 ```powershell
-go test ./... -v
+go test ./src/... -v
 ```
 
 Cobertura:
@@ -121,10 +130,10 @@ Requer Git Bash (ou WSL) no Windows. Se necessário, dê permissão de execuçã
 #### Opção 2: passo a passo manual
 
 ```powershell
-docker compose up --build -d
+cd src; docker compose up --build -d; cd ..
 $env:E2E = "1"
 go test ./test/bdd/... -v
-docker compose down
+cd src; docker compose down; cd ..
 ```
 
 Cada cenário usa um IP forjado exclusivo (header `X-Forwarded-For`) para não interferir com outros cenários/execuções. Cenários cobertos: requisições dentro do limite por IP, estouro do limite por IP retornando `429` com a mensagem exata, e precedência do token sobre o limite de IP.
