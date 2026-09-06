@@ -19,9 +19,13 @@ echo "==> Subindo containers (docker compose up --build -d)..."
 
 echo "==> Executando testes e2e (E2E=1 go test ./test/bdd/...)..."
 set +e
-E2E=1 go test ./test/bdd/... -v
+E2E=1 go test ./test/bdd/... -v -count=1
 test_exit_code=$?
 set -e
+
+#echo
+#echo "==> Logs da API (request/response) durante os testes:"
+#(cd "$SRC_DIR" && docker compose logs app --no-color)
 
 echo
 read -r -p "Pressione ENTER para encerrar os containers..."

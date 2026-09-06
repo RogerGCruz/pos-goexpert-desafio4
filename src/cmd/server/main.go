@@ -33,7 +33,7 @@ func main() {
 		_, _ = w.Write([]byte("request accepted"))
 	})
 
-	handler := middleware.RateLimiter(rateLimiter)(mux)
+	handler := middleware.Logging(middleware.RateLimiter(rateLimiter)(mux))
 
 	addr := ":" + cfg.ServerPort
 	log.Printf("server listening on %s", addr)
