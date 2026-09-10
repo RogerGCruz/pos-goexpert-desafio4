@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/rogerioperoni/pos-goexpert-desafio4/internal/limiter"
+	"github.com/rogergcruz/pos-goexpert-desafio4/internal/limiter"
 )
 
 // Config agrega toda a configuração da aplicação, carregada de variáveis

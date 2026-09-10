@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/rogerioperoni/pos-goexpert-desafio4/internal/limiter"
+	"github.com/rogergcruz/pos-goexpert-desafio4/internal/limiter"
 )
 
 const tooManyRequestsMessage = "you have reached the maximum number of requests or actions allowed within a certain time frame"

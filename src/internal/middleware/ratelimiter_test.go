@@ -9,8 +9,8 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/redis/go-redis/v9"
 
-	"github.com/rogerioperoni/pos-goexpert-desafio4/internal/limiter"
-	"github.com/rogerioperoni/pos-goexpert-desafio4/internal/middleware"
+	"github.com/rogergcruz/pos-goexpert-desafio4/internal/limiter"
+	"github.com/rogergcruz/pos-goexpert-desafio4/internal/middleware"
 )
 
 const expectedBlockedBody = "you have reached the maximum number of requests or actions allowed within a certain time frame"

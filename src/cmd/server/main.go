@@ -6,9 +6,9 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"github.com/rogerioperoni/pos-goexpert-desafio4/internal/config"
-	"github.com/rogerioperoni/pos-goexpert-desafio4/internal/limiter"
-	"github.com/rogerioperoni/pos-goexpert-desafio4/internal/middleware"
+	"github.com/rogergcruz/pos-goexpert-desafio4/internal/config"
+	"github.com/rogergcruz/pos-goexpert-desafio4/internal/limiter"
+	"github.com/rogergcruz/pos-goexpert-desafio4/internal/middleware"
 )
 
 func main() {
